@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>预览页设计稿预览（仅本地查看用）</title>
+  <!--
+    这是给开发/设计自检用的预览页：用桩数据替换 chrome.* API，
+    直接双击打开就能看到 gallery.html 的真实外观（不需要加载扩展）。
+  -->
+  <link rel="stylesheet" href="../gallery.css" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="brand__mark" aria-hidden="true"></span>
+      <div class="brand__text">
+        <h1 class="wordmark">电商图片提取下载器</h1>
+        <p class="tagline" id="tagline">正在读取提取结果…</p>
+      </div>
+    </div>
+    <div class="masthead__meta">
+      <span class="chip chip--mono" id="demoChip">离线演示 · 下载为模拟</span>
+      <span class="chip" id="platformChip" hidden></span>
+      <span class="chip chip--mono" id="timeChip" hidden></span>
+      <a class="source" id="sourceLink" href="#" target="_blank" rel="noreferrer" hidden>打开来源页面 ↗</a>
+    </div>
+  </header>
+
+  <section class="deck" id="deck">
+    <div class="deck__row">
+      <div class="group">
+        <button class="btn" id="btnAll" type="button">全选</button>
+        <button class="btn" id="btnInvert" type="button">反选</button>
+        <button class="btn btn--quiet" id="btnNone" type="button">清空选择</button>
+      </div>
+      <div class="group group--fields">
+        <label class="field">
+          <span class="field__label">文件名前缀</span>
+          <input class="input" id="prefixInput" type="text" value="商品图" maxlength="40" spellcheck="false" />
+        </label>
+        <label class="field">
+          <span class="field__label">最小尺寸</span>
+          <select class="input input--select" id="minSizeSelect">
+            <option value="0">不限</option>
+            <option value="100">≥ 100 px</option>
+            <option value="300">≥ 300 px</option>
+            <option value="600">≥ 600 px</option>
+            <option value="1000">≥ 1000 px</option>
+          </select>
+        </label>
+      </div>
+      <div class="group group--end">
+        <span class="counter"><b id="selectedCount">0</b><span class="counter__sep">/</span><span id="totalCount">0</span> 已选</span>
+        <button class="btn btn--primary" id="btnDownload" type="button">下载选中（PNG）</button>
+        <button class="btn btn--danger" id="btnCancel" type="button" hidden>取消下载</button>
+        <button class="btn btn--quiet" id="btnRescan" type="button">重新获取</button>
+        <button class="btn btn--quiet" id="btnClear" type="button">清除数据</button>
+      </div>
+    </div>
+    <div class="progress" id="progress" hidden>
+      <div class="progress__rail"><i class="progress__fill" id="progressFill"></i></div>
+      <div class="progress__meta">
+        <span id="progressText" class="progress__text">准备中…</span>
+        <span id="progressStat" class="progress__stat"></span>
+      </div>
+    </div>
+  </section>
+
+  <main class="sheet" id="grid" aria-label="提取到的图片"></main>
+
+  <section class="empty" id="empty" hidden>
+    <p class="empty__code">NO IMAGES</p>
+    <h2 class="empty__title">还没有可下载的图片</h2>
+    <ol class="empty__steps">
+      <li>打开淘宝 / 天猫 / 京东 / 拼多多的<b>商品详情页</b>；</li>
+      <li>点击页面右下角的悬浮按钮<b>「获取图片」</b>；</li>
+      <li>图片会自动汇总到本页，勾选后点<b>「下载选中」</b>。</li>
+    </ol>
+    <p class="empty__hint">也可以点击浏览器工具栏上的扩展图标随时回到本页。</p>
+  </section>
+
+  <section class="report" id="report" hidden>
+    <div class="report__head">
+      <h2 class="report__title" id="reportTitle">下载结果</h2>
+      <button class="btn btn--quiet" id="btnCopyFailed" type="button" hidden>复制失败清单</button>
+    </div>
+    <div class="report__stats" id="reportStats"></div>
+    <ul class="report__list" id="reportList"></ul>
+  </section>
+
+  <footer class="footer">
+    <p>
+      命名规则：<code id="footerRule">商品图_001.png</code> ·
+      全部图片统一转换为 PNG（原图为 PNG 时直接无损使用） ·
+      保存到浏览器默认下载目录
+    </p>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    /* ---------- chrome.* 桩：用于离线预览界面 ---------- */
+    function svgTile(hue, w, h, label) {
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' +
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+        '<stop offset="0%" stop-color="hsl(' + hue + ',62%,62%)"/>' +
+        '<stop offset="100%" stop-color="hsl(' + (hue + 30) + ',58%,34%)"/>' +
+        '</linearGradient></defs>' +
+        '<rect width="100%" height="100%" fill="url(#g)"/>' +
+        '<circle cx="' + (w * 0.32) + '" cy="' + (h * 0.62) + '" r="' + (Math.min(w, h) * 0.26) + '" fill="rgba(255,255,255,.28)"/>' +
+        '<text x="50%" y="52%" text-anchor="middle" font-family="sans-serif" font-size="' +
+        Math.round(Math.min(w, h) * 0.16) + '" fill="rgba(255,255,255,.85)">' + label + '</text>' +
+        '</svg>';
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+
+    var SAMPLE = [];
+    var sizes = [[1200, 1200], [1000, 1000], [900, 1200], [1200, 900], [1400, 1400], [800, 800], [1100, 1466], [960, 960], [1500, 1125]];
+    for (var i = 0; i < sizes.length; i++) {
+      SAMPLE.push({
+        id: 'demo' + i,
+        url: 'https://img.alicdn.com/imgextra/i' + i + '/product_' + (i + 1) + '.jpg',
+        thumb: svgTile(i * 34, 520, Math.round(520 * sizes[i][1] / sizes[i][0]), 'IMG ' + (i + 1)),
+        width: sizes[i][0],
+        height: sizes[i][1]
+      });
+    }
+
+    /* 记录 gallery.js 注册的消息监听器，好让下面的模拟下载能"回放"进度事件 */
+    var listeners = [];
+    var simTimers = [];
+    var simCancelled = false;
+    var simResults = [];
+
+    function emit(msg) {
+      listeners.forEach(function (fn) {
+        try { fn(msg, {}, function () {}); } catch (e) { /* 忽略 */ }
+      });
+    }
+
+    function pad3(n) { return String(n).padStart(3, '0'); }
+
+    /** 模拟 Service Worker 的下载流程：逐张回放「转换中 → 进度 → 结束」 */
+    function simulateDownload(payload) {
+      var items = (payload && payload.items) || [];
+      var prefix = (payload && payload.prefix) || '商品图';
+      var total = items.length;
+      var results = [];
+      var ok = 0;
+      var failed = 0;
+
+      simCancelled = false;
+      simResults = results;
+      simTimers.forEach(clearTimeout);
+      simTimers = [];
+
+      items.forEach(function (item, i) {
+        var index = item.index || (i + 1);
+        simTimers.push(setTimeout(function () {
+          if (simCancelled) return;
+          emit({ type: 'EMI_ITEM_STATE', payload: { id: item.id } });
+        }, i * 480));
+
+        simTimers.push(setTimeout(function () {
+          if (simCancelled) return;
+          var isFailed = i % 5 === 4;
+          var asOriginal = !isFailed && i % 4 === 3;
+          var result = {
+            id: item.id,
+            ok: !isFailed,
+            index: index,
+            filename: prefix + '_' + pad3(index) + '.' + (asOriginal ? 'jpg' : 'png'),
+            mode: asOriginal ? 'original' : 'png',
+            bytes: 120000 + i * 45000
+          };
+          if (isFailed) {
+            result.error = '示例：图片 CDN 返回 403（演示用假错误）';
+            failed++;
+          } else {
+            ok++;
+          }
+          results.push(result);
+          emit({
+            type: 'EMI_PROGRESS',
+            payload: { done: i + 1, total: total, ok: ok, failed: failed, last: result }
+          });
+          if (i === total - 1) {
+            emit({ type: 'EMI_FINISHED', payload: { state: 'done', results: results } });
+          }
+        }, i * 480 + 320));
+      });
+    }
+
+    function cancelDownload() {
+      simCancelled = true;
+      simTimers.forEach(clearTimeout);
+      simTimers = [];
+      // 真实实现里取消要等当前这张处理完才结束，这里也延迟一点再回放结束事件；
+      // 「转换中…」的卡片由 gallery.js 收到 cancelled 后自己复原
+      setTimeout(function () {
+        emit({ type: 'EMI_FINISHED', payload: { state: 'cancelled', results: simResults.slice() } });
+      }, 600);
+    }
+
+    window.chrome = {
+      runtime: {
+        sendMessage: function (msg) {
+          if (!msg || !msg.type) return Promise.resolve({ ok: true });
+
+          if (msg.type === 'EMI_GET_SESSION') {
+            return Promise.resolve({
+              ok: true,
+              session: {
+                images: SAMPLE,
+                pageUrl: 'https://detail.tmall.com/item.htm?id=999',
+                pageTitle: '【预览】测试商品详情页',
+                platform: 'taobao',
+                createdAt: Date.now()
+              },
+              progress: null
+            });
+          }
+
+          // 离线预览里没有 Service Worker，下载流程用假数据回放一遍
+          if (msg.type === 'EMI_DOWNLOAD') {
+            simulateDownload(msg.payload);
+            return Promise.resolve({ ok: true });
+          }
+          if (msg.type === 'EMI_CANCEL_DOWNLOAD') {
+            cancelDownload();
+            return Promise.resolve({ ok: true });
+          }
+          if (msg.type === 'EMI_CLEAR_SESSION' || msg.type === 'EMI_RESCAN') {
+            return Promise.resolve({ ok: true });
+          }
+
+          return Promise.resolve({ ok: true });
+        },
+        onMessage: {
+          addListener: function (fn) { listeners.push(fn); },
+          removeListener: function (fn) {
+            var i = listeners.indexOf(fn);
+            if (i !== -1) listeners.splice(i, 1);
+          }
+        }
+      },
+      downloads: { onChanged: { addListener: function () {}, removeListener: function () {} }, search: function () {} },
+      storage: { local: { get: function (k, cb) { cb({}); }, set: function () {} } }
+    };
+  </script>
+  <script src="../lib/image-utils.js"></script>
+  <script src="../gallery.js"></script>
+</body>
+</html>

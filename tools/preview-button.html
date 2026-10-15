@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>悬浮按钮设计稿预览（仅本地查看用）</title>
+  <!--
+    用于本地查看 content.css 的真实效果：用和 content.js 相同的方式
+    （Shadow DOM + 构造样式表）渲染右下角悬浮按钮，并铺一层模拟商品页背景，
+    方便确认按钮不会遮挡页面原有操作。
+  -->
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: #1b1b1b;
+      background: #f4f5f7;
+    }
+    .mock-header { height: 60px; background: #fff; border-bottom: 1px solid #e6e8eb; display: flex; align-items: center; padding: 0 24px; gap: 18px; }
+    .mock-header b { color: #ff5000; font-size: 18px; }
+    .mock-search { flex: 1; height: 34px; border: 2px solid #ff5000; border-radius: 17px; }
+    .mock-body { max-width: 1120px; margin: 22px auto; display: grid; grid-template-columns: 420px 1fr; gap: 28px; }
+    .mock-gallery { height: 420px; background: linear-gradient(140deg, #dfe4ea, #c6cdd6); border-radius: 8px; }
+    .mock-thumbs { display: flex; gap: 8px; margin-top: 10px; }
+    .mock-thumbs i { width: 66px; height: 66px; background: #dfe4ea; border-radius: 6px; border: 2px solid transparent; }
+    .mock-thumbs i:first-child { border-color: #ff5000; }
+    .mock-title { font-size: 20px; font-weight: 600; line-height: 1.5; }
+    .mock-price { color: #ff5000; font-size: 30px; margin: 14px 0; }
+    .mock-row { color: #666; font-size: 13px; margin: 8px 0; }
+    .mock-buy { margin-top: 18px; display: flex; gap: 12px; }
+    .mock-buy button { height: 46px; padding: 0 34px; border: 0; border-radius: 6px; background: #ff5000; color: #fff; font-size: 16px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="mock-header">
+    <b>模拟商品页</b>
+    <span class="mock-search"></span>
+    <span style="color:#666;font-size:13px">购物车 · 我的淘宝</span>
+  </div>
+  <div class="mock-body">
+    <div>
+      <div class="mock-gallery"></div>
+      <div class="mock-thumbs"><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div>
+      <div class="mock-title">【模拟】纯棉宽松短袖 T 恤 男女同款 多色可选</div>
+      <div class="mock-price">¥ 89.00</div>
+      <div class="mock-row">颜色分类：经典黑 / 米白 / 雾霾蓝</div>
+      <div class="mock-row">尺码：S M L XL XXL</div>
+      <div class="mock-row">发货地：浙江杭州 · 快递免运费</div>
+      <div class="mock-buy"><button>立即购买</button><button style="background:#ffb400">加入购物车</button></div>
+    </div>
+  </div>
+
+  <script>
+    (async function () {
+      const host = document.createElement('div');
+      host.id = 'emi-floating-root';
+      host.style.setProperty('position', 'fixed');
+      host.style.setProperty('right', '24px');
+      host.style.setProperty('bottom', '28px');
+      host.style.setProperty('z-index', '2147483000');
+      const shadow = host.attachShadow({ mode: 'open' });
+      shadow.innerHTML = [
+        '<div class="emi-wrap">',
+        '  <div class="emi-toast" role="status" aria-live="polite" hidden>已提取 23 张图片，正在打开预览页</div>',
+        '  <button class="emi-fab" type="button">',
+        '    <span class="emi-fab__spinner" aria-hidden="true"></span>',
+        '    <span class="emi-fab__icon" aria-hidden="true">',
+        '      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',
+        '        <path d="M12 3v11"></path><path d="M7 9.5l5 5 5-5"></path><path d="M4 20h16"></path>',
+        '      </svg>',
+        '    </span>',
+        '    <span class="emi-fab__text">',
+        '      <span class="emi-fab__label">获取图片</span>',
+        '      <span class="emi-fab__sub">扫描本页商品图</span>',
+        '    </span>',
+        '    <span class="emi-fab__badge" hidden>23</span>',
+        '  </button>',
+        '</div>'
+      ].join('\n');
+      document.body.appendChild(host);
+
+      const css = await fetch('../content.css').then((r) => r.text());
+      const sheet = new CSSStyleSheet();
+      sheet.replaceSync(css);
+      shadow.adoptedStyleSheets = [sheet];
+      window.__EMI_PREVIEW__ = { host, shadow };
+    })();
+  </script>
+</body>
+</html>

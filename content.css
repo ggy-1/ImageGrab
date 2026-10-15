@@ -1,0 +1,298 @@
+/**
+ * content.css
+ * ---------------------------------------------------------------------------
+ * 「获取图片」悬浮按钮 + 轻提示的样式。
+ * 这些样式运行在 Shadow DOM 内（见 content.js 的 loadStyles），
+ * 因此不会被页面 CSS 影响，也不会污染页面样式。
+ * :host 上的 all: initial 用于阻断宿主页面的继承样式。
+ * ---------------------------------------------------------------------------
+ */
+
+:host {
+  all: initial;
+  display: block;
+
+  /* 设计变量：墨黑 + 琥珀强调色，与页面常见配色区分但不过分抢眼 */
+  --emi-ink: #14161a;
+  --emi-ink-2: #23262e;
+  --emi-line: rgba(255, 255, 255, 0.1);
+  --emi-amber: #ff8a1f;
+  --emi-amber-2: #ffb454;
+  --emi-text: #f4f5f7;
+  --emi-muted: #9aa1ab;
+  --emi-radius: 14px;
+  --emi-font: "Segoe UI Semibold", "PingFang SC", "HarmonyOS Sans SC",
+    "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+  --emi-font-mono: "Cascadia Mono", Consolas, "SF Mono", "PingFang SC", monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* hidden 属性优先级兜底（页面/扩展样式里若给元素设了 display 会覆盖它） */
+[hidden] {
+  display: none !important;
+}
+
+.emi-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  font-family: var(--emi-font);
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ------------------------------ 悬浮按钮 ------------------------------ */
+
+.emi-fab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px 11px 14px;
+  border: 1px solid var(--emi-line);
+  border-radius: var(--emi-radius);
+  background: linear-gradient(160deg, var(--emi-ink-2) 0%, var(--emi-ink) 58%, #0f1114 100%);
+  color: var(--emi-text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 2px 6px rgba(0, 0, 0, 0.38),
+    0 12px 26px -10px rgba(0, 0, 0, 0.7);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease;
+  animation: emi-rise 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 顶部琥珀氛围光 */
+.emi-fab::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(140px 70px at 10% -10%, rgba(255, 138, 31, 0.3), transparent 72%);
+  opacity: 0.85;
+  transition: opacity 0.22s ease;
+}
+
+/* 左侧强调条 */
+.emi-fab::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, var(--emi-amber-2), var(--emi-amber));
+  opacity: 0.9;
+}
+
+.emi-fab:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 138, 31, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 4px 10px rgba(0, 0, 0, 0.4),
+    0 18px 34px -12px rgba(255, 138, 31, 0.55);
+}
+
+.emi-fab:hover::before {
+  opacity: 1;
+}
+
+.emi-fab:hover .emi-fab__icon svg {
+  transform: translateY(2px);
+}
+
+.emi-fab:active {
+  transform: translateY(0) scale(0.985);
+}
+
+.emi-fab:focus-visible {
+  outline: 2px solid var(--emi-amber-2);
+  outline-offset: 3px;
+}
+
+.emi-fab:disabled {
+  cursor: progress;
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.emi-fab__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--emi-amber-2);
+  flex: 0 0 auto;
+}
+
+.emi-fab__icon svg {
+  transition: transform 0.22s ease;
+}
+
+.emi-fab__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  text-align: left;
+}
+
+.emi-fab__label {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.emi-fab__sub {
+  font-family: var(--emi-font-mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+  color: var(--emi-muted);
+  white-space: nowrap;
+}
+
+/* 加载中的旋转指示器 */
+.emi-fab__spinner {
+  display: none;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-top-color: var(--emi-amber-2);
+  animation: emi-spin 0.8s linear infinite;
+}
+
+.emi-fab--busy .emi-fab__spinner {
+  display: block;
+}
+
+.emi-fab--busy .emi-fab__icon {
+  display: none;
+}
+
+/* 右下角可选数量角标 */
+.emi-fab__badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--emi-amber-2), var(--emi-amber));
+  color: #241505;
+  font-family: var(--emi-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  animation: emi-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.emi-fab__badge[hidden] {
+  display: none;
+}
+
+/* ------------------------------ 轻提示 ------------------------------ */
+
+.emi-toast {
+  max-width: 288px;
+  padding: 9px 12px 9px 13px;
+  border: 1px solid var(--emi-line);
+  border-left-width: 3px;
+  border-radius: 10px;
+  background: rgba(20, 22, 26, 0.96);
+  color: var(--emi-text);
+  font-family: var(--emi-font);
+  font-size: 12.5px;
+  line-height: 1.45;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.75);
+  animation: emi-slide 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.emi-toast[hidden] {
+  display: none;
+}
+
+.emi-toast--info { border-left-color: #6f7d8c; }
+.emi-toast--ok { border-left-color: #46c17d; }
+.emi-toast--warn { border-left-color: var(--emi-amber); }
+.emi-toast--error { border-left-color: #ef5350; }
+
+/* ------------------------------ 动画 ------------------------------ */
+
+@keyframes emi-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes emi-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes emi-pop {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes emi-slide {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emi-fab,
+  .emi-fab__badge,
+  .emi-toast {
+    animation: none;
+  }
+  .emi-fab__spinner {
+    animation-duration: 1.6s;
+  }
+  .emi-fab,
+  .emi-fab__icon svg {
+    transition: none;
+  }
+}
+
+/* 窄屏适配：贴边、隐藏副标题，避免遮挡页面操作 */
+@media (max-width: 640px) {
+  .emi-wrap {
+    gap: 8px;
+  }
+  .emi-fab {
+    padding: 10px 13px 10px 11px;
+    gap: 8px;
+  }
+  .emi-fab__sub {
+    display: none;
+  }
+  .emi-toast {
+    max-width: 220px;
+    font-size: 12px;
+  }
+}

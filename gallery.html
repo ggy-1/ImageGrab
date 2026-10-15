@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>图片提取结果 · 电商图片提取下载器</title>
+  <link rel="stylesheet" href="gallery.css" />
+</head>
+<body>
+  <!-- 背景纹理层：暗房灯箱的细微网格 -->
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="brand__mark" aria-hidden="true"></span>
+      <div class="brand__text">
+        <h1 class="wordmark">电商图片提取下载器</h1>
+        <p class="tagline" id="tagline">正在读取提取结果…</p>
+      </div>
+    </div>
+    <div class="masthead__meta">
+      <span class="chip" id="platformChip" hidden></span>
+      <span class="chip chip--mono" id="timeChip" hidden></span>
+      <a class="source" id="sourceLink" href="#" target="_blank" rel="noreferrer" hidden>打开来源页面 ↗</a>
+    </div>
+  </header>
+
+  <!-- 控制台 -->
+  <section class="deck" id="deck">
+    <div class="deck__row">
+      <div class="group">
+        <button class="btn" id="btnAll" type="button">全选</button>
+        <button class="btn" id="btnInvert" type="button">反选</button>
+        <button class="btn btn--quiet" id="btnNone" type="button">清空选择</button>
+      </div>
+
+      <div class="group group--fields">
+        <label class="field">
+          <span class="field__label">文件名前缀</span>
+          <input class="input" id="prefixInput" type="text" value="商品图" maxlength="40" spellcheck="false" />
+        </label>
+        <label class="field">
+          <span class="field__label">最小尺寸</span>
+          <select class="input input--select" id="minSizeSelect">
+            <option value="0">不限</option>
+            <option value="100">≥ 100 px</option>
+            <option value="300">≥ 300 px</option>
+            <option value="600">≥ 600 px</option>
+            <option value="1000">≥ 1000 px</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="group group--end">
+        <span class="counter">
+          <b id="selectedCount">0</b><span class="counter__sep">/</span><span id="totalCount">0</span> 已选
+        </span>
+        <button class="btn btn--primary" id="btnDownload" type="button">下载选中（PNG）</button>
+        <button class="btn btn--danger" id="btnCancel" type="button" hidden>取消下载</button>
+        <button class="btn btn--quiet" id="btnRescan" type="button">重新获取</button>
+        <button class="btn btn--quiet" id="btnClear" type="button">清除数据</button>
+      </div>
+    </div>
+
+    <!-- 下载进度 -->
+    <div class="progress" id="progress" hidden>
+      <div class="progress__rail"><i class="progress__fill" id="progressFill"></i></div>
+      <div class="progress__meta">
+        <span id="progressText" class="progress__text">准备中…</span>
+        <span id="progressStat" class="progress__stat"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 联系方式印相：图片网格 -->
+  <main class="sheet" id="grid" aria-label="提取到的图片"></main>
+
+  <!-- 空状态 -->
+  <section class="empty" id="empty" hidden>
+    <p class="empty__code">NO IMAGES</p>
+    <h2 class="empty__title">还没有可下载的图片</h2>
+    <ol class="empty__steps">
+      <li>打开淘宝 / 天猫 / 京东 / 拼多多的<b>商品详情页</b>；</li>
+      <li>点击页面右下角的悬浮按钮<b>「获取图片」</b>；</li>
+      <li>图片会自动汇总到本页，勾选后点<b>「下载选中」</b>。</li>
+    </ol>
+    <p class="empty__hint">也可以点击浏览器工具栏上的扩展图标随时回到本页。</p>
+  </section>
+
+  <!-- 下载结果报告 -->
+  <section class="report" id="report" hidden>
+    <div class="report__head">
+      <h2 class="report__title" id="reportTitle">下载结果</h2>
+      <button class="btn btn--quiet" id="btnCopyFailed" type="button" hidden>复制失败清单</button>
+    </div>
+    <div class="report__stats" id="reportStats"></div>
+    <ul class="report__list" id="reportList"></ul>
+  </section>
+
+  <footer class="footer">
+    <p>
+      命名规则：<code id="footerRule">商品图_001.png</code> ·
+      全部图片统一转换为 PNG（原图为 PNG 时直接无损使用） ·
+      保存到浏览器默认下载目录
+    </p>
+    <p class="footer__note">
+      若某张图片所在的 CDN 域名未在扩展权限内声明，转换会失败，此时自动按<b>原格式</b>下载并在卡片上标注。
+    </p>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="lib/image-utils.js"></script>
+  <script src="gallery.js"></script>
+</body>
+</html>

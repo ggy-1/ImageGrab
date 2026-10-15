@@ -1,0 +1,17 @@
+{
+  "name": "ecommerce-image-extractor",
+  "version": "1.0.0",
+  "description": "Chrome MV3 扩展：在淘宝 / 天猫 / 京东 / 拼多多商品详情页一键提取全部商品图片并批量下载为 PNG",
+  "private": true,
+  "scripts": {
+    "test": "node tests/test-image-utils.js && node tests/test-content-dom.js && node tests/test-background.js && node tests/validate-extension.js",
+    "test:utils": "node tests/test-image-utils.js",
+    "test:content": "node tests/test-content-dom.js",
+    "test:background": "node tests/test-background.js",
+    "test:manifest": "node tests/validate-extension.js",
+    "icons": "powershell -ExecutionPolicy Bypass -File tools/make-icons.ps1"
+  },
+  "devDependencies": {
+    "jsdom": "^27.0.0"
+  }
+}
